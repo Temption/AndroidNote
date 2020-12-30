@@ -69,9 +69,7 @@ observable.subscribeOn(Schedulers.newThread())
 
 ### 4.创建操作符
 
-**创建被观察者对象**
-
-![创建操作符](.\image\rxjava\创建操作符.png)
+**创建被观察者对象**![创建操作符](img/RxJava2/%E5%88%9B%E5%BB%BA%E6%93%8D%E4%BD%9C%E7%AC%A6.png)
 
 #### 4.1  create
 
@@ -170,7 +168,7 @@ Observable.range(3,10)
 
 ### 5.0转换操作符
 
-#### 5.1map
+#### 5.1map 将Observable map到另一类Observable
 
 ```java
 // 采用RxJava基于事件流的链式操作
@@ -198,7 +196,7 @@ Observable.range(3,10)
         });
 ```
 
-#### 5.2flatmap
+#### 5.2flatmap常用于嵌套的网络请求
 
 - rawObservabel-->newObsevable,
   无序合并
@@ -227,7 +225,7 @@ consumer的onNext中依次会123，234，345，45，5，之后onComplete();
 
 ### 6.组合操作符
 
-![创建操作符](.\image\rxjava\组合操作符.webp)
+![zip操作符](img/RxJava2/zip%E6%93%8D%E4%BD%9C%E7%AC%A6.webp)
 
 |  操作符   | 执行方式 |          产物           |
 | :----: | :--: | :-------------------: |
