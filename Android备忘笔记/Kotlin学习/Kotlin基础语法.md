@@ -6,6 +6,16 @@
 
 #### 1.var (variable)可以被重新赋值，val(value) 不可以
 
+```kotlin
+//value 不可修改，但可以自定义getter
+val size: Int
+    get() { // 👈 每次获取 size 值时都会执行 items.size
+        return items.size
+    }
+```
+
+
+
 #### 2.关于null
 
 ```kotlin
@@ -20,6 +30,7 @@
     val heightInSquare = length ?: 0
 // !! double-bang ，"!" is often called a "bang"
     var len = nullable_str!!.length   //may throw NullPointerException 
+
 ```
 
 #### 3. 集合
@@ -55,16 +66,31 @@ val message = "The water temperature is $temperature,and it's ${ if (temperature
 //The water temperature is 10,and it's OK.
 ```
 
+#### 7.原生字符串
+
+```kotlin
+val name = "world"
+val myName = "kotlin"
+           👇
+val text = """
+      Hi $name!
+    My name is $myName.\n
+"""
+println(text)
+```
+
+
+
 #### 7.参数
 
 ```kotlin
 //可选参数的值可以是函数
-fun swim(speed: String = "fast") {
-   println("swimming $speed")
+fun sayHi( age: Int,name: String = "world",whom: String = "anyOne") {
+    ...
 }
-swim()   // uses default speed 有默认参数，不必须传参
-swim("slow")   // positional argument
-swim(speed="turtle-like")   // named parameter
+//一般，有默认值的参数放到后边
+
+
 ```
 
 #### 8.filter ,map
@@ -133,24 +159,30 @@ println(dirtyLevel)
 #### 11.constructor and init 
 
 ```kotlin
-//primary constructor
-class Aquarium(from: String) {
-    //构造后  按序执行init函数
+class Student(private var name: String, private var age: Int) {
+
+    private var gender: Int? = null
+
     init {
-        println("init 1 $from")
+        name = "$name inited"
     }
-    init {
-        // 1 liter = 1000 cm^3
-        println("init 2")
+
+    constructor(name: String, age: Int, gender: Int) : this(name, age) {
+        this.gender = gender
     }
-    //secondary constructors
-    constructor(from : String,name:String):this(from){
-        println("secondary constructor called from $from name is $name")
+
+    fun show() {
+        print("该学生的姓名是：${name},年龄是:${age},性别是：${gender}")
+    }
+
+    fun judge() {
+        if (age > 30 && gender == 1) {
+            print("bad")
+        } else {
+            print("good")
+        }
     }
 }
-//1. 主构造函数
-//2. init
-//3. 次构造函数
 ```
 
 #### 12.subclasses 
@@ -276,6 +308,38 @@ println("$tool is used for $use")
 //⇒ fish net is used for catching fish
 ```
 
+#### 18.数组
+
+```kotlin
+val array7 = Array(4, { i -> i * i })  //0,1,4,9
+// 遍历数组元素
+for (item in array7) {
+    println(item)
+}
+// 遍历数组下标
+for (item in array7.indices) {
+    println(item)
+}
+// 迭代器遍历数组1
+val it = array7.iterator()
+for (item in it.iterator()) {
+    println(item)
+}
+// 迭代器遍历数组2
+val it1 = array7.iterator()
+it1.forEach {
+    println(it)
+}
+// forEach遍历数组
+array7.forEach {
+    println(it)
+}
+```
+
+#### 19.
+
+
+
 #### 19.Collections
 
 ```kotlin
@@ -285,17 +349,30 @@ println(list.sum())
 //需要知道如何计算
 val list2 = listOf("a", "bbb", "cc")
 println(list2.sumBy { it.length })
+
+//listOf() 创建不可变的 List，mutableListOf() 创建可变的 List。
+val mutableList = mutableListOf<Int?>(1,5)
+mutableList.add(2)
+mutableList.add(2)
+mutableList.add(null)
+mutableList.filterNotNull()
+mutableList.forEach{
+    println(it)
+}
+for(item in mutableList){
+    println(item)
+}
 ```
 
-### 20.区间
+### 20.区间 Range
 
 ```
-0..100表示[0,100] 0.rangeTO(100)
-
+//[0,100]  :IntRange
+0..100   0 rangeTO(100)  
+//[100,0]  :IntRange
+100.downTo(0)
 1 until 100 表示[0,100)
-
 i in 0..100 判断i是否在区间[0,100]中
-
 ```
 
 #### 20.for 遍历，循环
@@ -340,9 +417,9 @@ class MyClass {
     }
 }
 
-//companion objects 与 regular objects 的区别：
-//Companion objects 随类加载，本质是静态单例内部类
-//Regular objects 随对象加载
+//companion object 与 regular objects 的区别：
+//Companion object 随类加载，本质是静态单例内部类
+//普通 object 随对象加载
 //为了在java中调用，需要给 Companion object的静态成员添加@JvmStatic注解
 ```
 
