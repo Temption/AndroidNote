@@ -10,39 +10,6 @@
 
 - 链式
 
-  ```java
-  //Emitter是发射器，onSubscribe(Disposable d)可丢弃的
-  Observable.create(new ObservableOnSubscribe<Integer>() {
-              @Override
-              public void subscribe(ObservableEmitter<Integer> emitter) throws Exception {
-                  emitter.onNext(1);
-                  emitter.onNext(2);
-                  emitter.onNext(3);
-  				//如果不care 可以不调用，调用之后走Consumer的onComplete方法
-                  emitter.onComplete();
-              }
-          }).subscribe(new Observer<Integer>() {
-              @Override
-              public void onSubscribe(Disposable d) {
-                	d.dispose();//解除订阅关系，你发你的，我不要了
-              }
-
-              @Override
-              public void onNext(Integer value) {
-                  Log.d(TAG, "" + value);
-              }
-
-              @Override
-              public void onError(Throwable e) {
-                  Log.d(TAG, "error");
-              }
-
-              @Override
-              public void onComplete() {
-                  Log.d(TAG, "complete");
-              }
-          });
-  ```
 
 
 ### 2.subcribe方法重载
@@ -61,7 +28,7 @@
 ```java
 //线程切换
 observable.subscribeOn(Schedulers.newThread())     
-       //  .subscribeOn(Schedulers.io())      //多次调用subcribeOn只有第一次有效，一夫一妻         
+       //  .subscribeOn(Schedulers.io())      //多次调用subcribeOn  只有第一次  有效，一夫一妻         
          .observeOn(AndroidSchedulers.mainThread()) // //多次调用oberverOn，均有效切换线程
          .observeOn(Schedulers.io())                
          .subscribe(consumer);                                      
@@ -119,21 +86,8 @@ observable.subscribeOn(Schedulers.newThread())
 
 #### 4.4 fromIterable,list
 
-#### 4.5 defer,当发生subscribe时，才创建被观察者
+#### 4.5 defer  延迟创建Observable
 
-```java
-Integer i = 10;
-        // 2. 通过defer 定义被观察者对象，此时观察者未发送事件
-        Observable<Integer> observable = Observable.defer(new Callable<ObservableSource<? extends Integer>>() {
-            @Override
-            public ObservableSource<? extends Integer> call() throws Exception {
-              	//这里会发送i的第二次赋值
-                return Observable.just(i);
-            }
-        });
-//再次赋值
-        i = 15;
-```
 #### 4.6 timer,subcribe后，延迟发送事件
 
 #### 4.7 interval无限轮询
@@ -168,49 +122,55 @@ Observable.range(3,10)
 
 ### 5.0转换操作符
 
-#### 5.1map 将Observable map到另一类Observable
+#### 5.1map 一对一转换
 
 ```java
-// 采用RxJava基于事件流的链式操作
-        Observable.create(new ObservableOnSubscribe<Integer>() {
-            // 1. 被观察者发送事件 = 参数为整型 = 1、2、3
-            @Override
-            public void subscribe(ObservableEmitter<Integer> emitter) throws Exception {
-                emitter.onNext(1);
-                emitter.onNext(2);
-                emitter.onNext(3);
-            }
-            // 2. 使用Map变换操作符中的Function函数对被观察者发送的事件进行统一变换：整型变换成字符串类型
-        }).map(new Function<Integer, String>() {
-            @Override
-            public String apply(Integer integer) throws Exception {
-                return "使用 Map变换操作符 将事件" + integer +"的参数从 整型"+integer + " 变换成 字符串类型" + integer ;
-            }
-        }).subscribe(new Consumer<String>() {
-
-            // 3. 观察者接收事件时，是接收到变换后的事件 = 字符串类型
-            @Override
-            public void accept(String s) throws Exception {
-                Log.d(TAG, s);
-            }
-        });
+Student[] students = ...;
+Observable.from(students)
+    .map(new Func1<Student, String>() {
+        @Override
+        public String call(Student student) {
+            return student.getName();
+        }
+    })
+    .subscribe(new Subscriber<String>() {
+    @Override
+    public void onNext(String name) {
+        Log.d(tag, name);
+    }
+	...
+});
 ```
 
-#### 5.2flatmap常用于嵌套的网络请求
+#### 5.2flatmap 
 
-- rawObservabel-->newObsevable,
-  无序合并
+将一个Observable发送的items 转化为 Observables,
 
-  ```java
-  // 采用RxJava基于事件流的链式操作
-             Observable.range(1, 15)
-                  .flatMap(item -> Observable.just(item).delay(1,TimeUnit.MILLISECONDS))
-                  .subscribe(x -> System.out.print(x + " "));;
-  ```
+```java
+final List<Integer> numbers = new ArrayList<>(Arrays.asList(2, 3, 4, 5, 6, 7, 8, 9, 10));
+Disposable subscribe = Observable.fromIterable(numbers)
+    .observeOn(Schedulers.computation())
+    .flatMap(new Function<Integer, ObservableSource<Integer>>() {
+        @Override
+        public ObservableSource<Integer> apply(@NonNull Integer integer) {
+            return Observable.just(integer * integer);
+        }
+    })
+    .observeOn(AndroidSchedulers.mainThread())
+    .subscribe(new Consumer<Integer>() {
+        @Override
+        public void accept(Integer integer) throws Exception {
+            LogUtils.e(integer);
+        }
+    });
+//通过一组新创建的 Observable 将初始的对象发送的事件map到一组Observables,然后merge发送
+//场景：串行嵌套任务
+//原理：lift 操作进行代理
+```
 
 #### 5.3concatMap
 
-有序
+ 将Observavkes 有序铺平，flatmap是merge操作符,concatMap是concat
 
 #### 5.4buffer
 
