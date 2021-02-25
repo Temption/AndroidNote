@@ -36,7 +36,9 @@ observable.subscribeOn(Schedulers.newThread())
 
 ### 4.创建操作符
 
-**创建被观察者对象**![创建操作符](img/RxJava2/%E5%88%9B%E5%BB%BA%E6%93%8D%E4%BD%9C%E7%AC%A6.png)
+**创建被观察者对象**
+
+![创建操作符](img/RxJava2/%E5%88%9B%E5%BB%BA%E6%93%8D%E4%BD%9C%E7%AC%A6.png)
 
 #### 4.1  create
 
@@ -258,7 +260,7 @@ consumer的onNext中依次会123，234，345，45，5，之后onComplete();
 
 #### 6.4zip操作符，这里将两个观察者产物解压后再展示
 
-![场景：合并两个生产者的产物zip操作符](.\image\rxjava\zip操作符.webp)
+![zip操作符](img/RxJava2/zip%E6%93%8D%E4%BD%9C%E7%AC%A6.webp)
 
 - 最终合并的事件数量 = 多个被观察者（`Observable`）中数量最少的数量
 - 最终合并的事件数量 = 多个被观察者（`Observable`）中数量最少的数量
@@ -355,3 +357,26 @@ public interface Disposable {
         boolean isDisposed();
 }
 ```
+
+### 9.冷流-热流
+
+```
+冷流，事件发送在订阅时发生，不能自由指定（Observable,Flow等）
+热流，事件发送可以在任意事件（PublishSubject，LiveData）
+```
+
+### 10.被压
+
+发生条件：
+
+- 异步订阅
+- 生产的速度大于消费的速度
+
+使用Observable,会导致上游数据堆积导致OOM,可以使用Flowable+合适的背压策略来处理背压问题
+
+**背压策略**
+ERROR 数据堆积到128时抛出onError异常（推荐）
+LATEST
+DROP
+Buffer-缓存数据，不断扩容队列，直至OOM（默认的策略）
+

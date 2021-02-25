@@ -10,7 +10,9 @@ andriod提供给我们更新UI 必须使用 的一套机制，我们可以发送
 
 public class ActivityThread{
     public void main(String args[]){
+		//将Loopper绑定当前Thread
         Looper.prepareMainLooper();
+        
         ActivityThread thread = new ActivityThread();
 		//接受系统服务AMS发来的消息
         thread.attach(false);
@@ -75,7 +77,7 @@ private static void prepare(boolean quitAllowed) {
 ### Handler
 
 ```java
-//Handler持有Looper，而Looper本身持有MessageQueue与当前Thread
+//Handler持有Looper，Looper持有MessageQueue与当前Thread
 public Handler(Callback callback, boolean async) {
      	//如果是匿名类，warn开发者
         //获取当前线程的Looper
@@ -192,6 +194,9 @@ onResume时
 调用requestLayout时，checkThread()会抛出该错误
 ```
 
+Handler构造需要Looper（子线程创建Handler异常）
+Looper.prepare()将Looper绑定到当前线程（ThreadLocal）
+Looper持有MessageQueue,将消息不断的取出，发送到Message的target
 
 
 

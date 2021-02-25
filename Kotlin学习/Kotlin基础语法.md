@@ -27,10 +27,21 @@ val size: Int
 //length可能为空
     var length :Int? = nullable_str?.length
 // "Elvis operator", ?:  空右，不空左边
-    val heightInSquare = length ?: 0
+    val heightInSquare = nullable_str?.length?: 0
 // !! double-bang ，"!" is often called a "bang"
     var len = nullable_str!!.length   //may throw NullPointerException 
 
+```
+
+#### 2.区间
+
+```
+//[0,100]  :IntRange
+0..100   0 rangeTO(100)  
+//[100,0]  :IntRange
+100.downTo(0)
+1 until 100 表示[0,100)
+i in 0..100 判断i是否在区间[0,100]中
 ```
 
 #### 3. 集合
@@ -40,23 +51,106 @@ val size: Int
     val school = listOf("mackerel", "trout", "halibut")
 //可变
     val listWithNulls = mutableListOf("tuna", "salmon", null)
-  school?.let { println(it) } // 如果不是null 就输出
 //过滤掉集合中的null
     val nonNullList: List<String> = listWithNulls.filterNotNull()
+//简单声明
+    val hashMap = hashMapOf<String,String>()
+    val mutableListOf = mutableListOf<String>();
+
+```
+
+```kotlin
+//求和
+val list = listOf(1, 5, 3, 4)
+println(list.sum())
+println(list.sumBy { it.length })
+
+//listOf() 创建不可变的 List，mutableListOf() 创建可变的 List。
+val mutableList = mutableListOf<Int?>(1,5)
+mutableList.add(2)
+mutableList.add(2)
+mutableList.add(null)
+mutableList.filterNotNull()
+//foreach 无法打断循环
+mutableList.forEach{
+    println(it)
+}
+//for 可以打断
+for(item in mutableList){
+    println(item)
+		if(...){
+            break
+        }
+}
 ```
 
 #### 4.数组
 
 ```kotlin
 val mix = arrayOf("fish", 2)
-val numbers = intArrayOf(1,2,3)
-
+val numbers = intArrayOf(1,2,3) //基本类型使用，效率高
 两个数组 可以直接 "+"，构造“和数组”，不同类型数组没有相加意义
 ```
 
-#### 5.loop
+#### 5.遍历
 
-while是先判断后循环 ，而do–while是先循环后判断。
+```kotlin
+val array7 = Array(4, { i -> i * i })  //0,1,4,9
+// 遍历数组元素
+for (item in array7) {
+    println(item)
+}
+// 遍历数组下标
+for (item in array7.indices) {
+    println(item)
+}
+// 迭代器遍历数组1
+val it = array7.iterator()
+for (item in it.iterator()) {
+    println(item)
+}
+// 迭代器遍历数组2
+val it1 = array7.iterator()
+it1.forEach {
+    println(it)
+}
+// forEach遍历数组
+array7.forEach {
+    println(it)
+}
+```
+
+```kotlin
+val intArray = intArrayOf(1, 2, 3, 2)
+// {1, 2}  一直拿 直到。。。
+val newList1: List = intArray.takeWhile { i -> 
+	i < 3 
+}
+// {1, 2，2}   过滤出所有满足条件的    
+val newList2: List = intArray.filter { i ->
+    i < 3 // 👈 过滤掉数组中等于 1 的元素
+}
+
+//🏝️map操作符
+//  [1, 2, 3]
+       ⬇️ 
+//  {2, 3, 4}
+val intArray2 = intArrayOf(1, 2, 3)
+val newList: List = intArray2.map { i ->
+    i + 1 // 👈 每个元素加 1
+}
+
+//🏝️flatmap
+//          [1, 2, 3]
+               ⬇️
+// {"2", "a" , "3", "a", "4", "a"}
+intArray.flatMap { i ->
+    listOf("${i + 1}", "a") // 👈 生成新集合
+}
+
+```
+
+
 
 #### 6.$引用
 
@@ -79,8 +173,6 @@ val text = """
 println(text)
 ```
 
-
-
 #### 7.参数
 
 ```kotlin
@@ -90,39 +182,6 @@ fun sayHi( age: Int,name: String = "world",whom: String = "anyOne") {
 }
 //一般，有默认值的参数放到后边
 
-
-```
-
-#### 8.filter ,map
-
-```kotlin
-
-val intArray = intArrayOf(1, 2, 3) 
-//🏝️fliter
-// [1, 2, 3]
-      ⬇️
-//  {2, 3}
-
-//            👇 注意，这里变成了 List
-val newList: List = intArray.filter { i ->
-    i != 1 // 👈 过滤掉数组中等于 1 的元素
-}
-
-//🏝️map
-//  [1, 2, 3]
-       ⬇️ 
-//  {2, 3, 4}
-val newList: List = intArray.map { i ->
-    i + 1 // 👈 每个元素加 1
-}
-
-//🏝️flatmap
-//          [1, 2, 3]
-               ⬇️
-// {"2", "a" , "3", "a", "4", "a"}
-intArray.flatMap { i ->
-    listOf("${i + 1}", "a") // 👈 生成新集合
-}
 
 ```
 
@@ -308,104 +367,9 @@ println("$tool is used for $use")
 //⇒ fish net is used for catching fish
 ```
 
-#### 18.数组
-
-```kotlin
-val array7 = Array(4, { i -> i * i })  //0,1,4,9
-// 遍历数组元素
-for (item in array7) {
-    println(item)
-}
-// 遍历数组下标
-for (item in array7.indices) {
-    println(item)
-}
-// 迭代器遍历数组1
-val it = array7.iterator()
-for (item in it.iterator()) {
-    println(item)
-}
-// 迭代器遍历数组2
-val it1 = array7.iterator()
-it1.forEach {
-    println(it)
-}
-// forEach遍历数组
-array7.forEach {
-    println(it)
-}
-```
-
-#### 19.
 
 
-
-#### 19.Collections
-
-```kotlin
-val list = listOf(1, 5, 3, 4)
-println(list.sum())
-
-//需要知道如何计算
-val list2 = listOf("a", "bbb", "cc")
-println(list2.sumBy { it.length })
-
-//listOf() 创建不可变的 List，mutableListOf() 创建可变的 List。
-val mutableList = mutableListOf<Int?>(1,5)
-mutableList.add(2)
-mutableList.add(2)
-mutableList.add(null)
-mutableList.filterNotNull()
-mutableList.forEach{
-    println(it)
-}
-for(item in mutableList){
-    println(item)
-}
-```
-
-### 20.区间 Range
-
-```
-//[0,100]  :IntRange
-0..100   0 rangeTO(100)  
-//[100,0]  :IntRange
-100.downTo(0)
-1 until 100 表示[0,100)
-i in 0..100 判断i是否在区间[0,100]中
-```
-
-#### 20.for 遍历，循环
-
-```kotlin
-//rangeTo 相当于 .. 运算符
-var mutableList: MutableList<Int> = mutableListOf(1, 2, 3, 4)
-mutableList.forEach {
-    println("Mutable List Elements:$it")
-}
-for (value in mutableList) {
-    print("value:$value")
-}
-for ((index,e) in mutableList.withIndex()){
-    println("下标=$index----元素=$e")
-}
-val cures = hashMapOf("white spots" to "Ich", "red sores" to "hole disease")
-println(cures.get("white spots"))
-println(cures["white spots"])
-//⇒ Ich Ich
-println(cures["nulla"])
-//⇒ null
-println(cures.getOrDefault("nulla", "sorry, I don't know")))
-//⇒ sorry, I don't know
-
-//If you need to do more than just return a value, Kotlin provides the getOrElse() function.
-cures.getOrElse("bloating") {"do sth"}
-
-// Mutable just means able to change, lets you put and remove items,
-//immutable means unable to change. 
-```
-
-#### 21.const,伴生对象
+#### 24.const,伴生对象
 
 ```kotlin
 //类似于 public static final
@@ -423,7 +387,7 @@ class MyClass {
 //为了在java中调用，需要给 Companion object的静态成员添加@JvmStatic注解
 ```
 
-##### 22.标准函数
+#### 25.标准函数
 
 ```kotlin
 // let //表示object不为null的条件下，才会去执行let函数体
@@ -468,7 +432,7 @@ plant.pull()
 | run        | fun <T, R> T.run(block: T.() -> R): R = block()              | this/省略              | 闭包形式   | let+with                 |
 | apply      | fun T.apply(block: T.() -> Unit): T { block(); return this } | this/省略              | 返回this   | 增强的run,返回this       |
 
-#### 23.扩展函数
+#### 26.扩展函数
 
 ```kotlin
 open class Animal {
@@ -496,14 +460,14 @@ fun main(args: Array<String>) {
 // limitations of extensions ：不能使用private的变量
 ```
 
-#### 24.Generics 泛型，直译 通用类型
+#### 27.Generics 泛型，直译 通用类型
 
 泛型  out in
 producer extends,consumer super!
 
 
 
-#### 25.伴生对象
+#### 28.伴生对象
 
 ```kotlin
 	class Activity{
@@ -519,7 +483,7 @@ producer extends,consumer super!
     }
 ```
 
-### 26.Unit 表示的是一个值的类型类似void，Nothing表示"永远不存在的值"
+#### 29.Unit 表示的是一个值的类型类似void，Nothing表示"永远不存在的值"
 
 ```kotlin
 EditText().addTextChangedListener(object : TextWatcher {
@@ -531,22 +495,7 @@ EditText().addTextChangedListener(object : TextWatcher {
 })
 ```
 
-### 27.协程
-
-```
-    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.4"
-    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.3.4"
-```
-
-- kotlin协程在jvm本质上就是切线程，靠线程池来实现
-
-- 挂起就是执行完后再切回来
-
-- suspend本身没有实现挂起，只是一个提示
-
-- 非阻塞式：看起来阻塞的代码，做出非阻塞的操作
-
-### 28.LiveData依赖于另一个LiveData 可以使用Transformations.map
+#### 31.LiveData依赖于另一个LiveData 可以使用Transformations.map
 
 ```kotlin
 // This LiveData depends on another so we can use a transformation.
@@ -555,7 +504,7 @@ EditText().addTextChangedListener(object : TextWatcher {
     }
 ```
 
-### 29.inline内联函数
+#### 32.inline内联函数
 
 ```
 //inline 可以让你用内联——也就是函数内容直插到调用处——的方式来优化代码结构，从而减少函数类型的对象的创建；
