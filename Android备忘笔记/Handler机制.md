@@ -139,49 +139,16 @@ public Handler() {
     // subject to {@link Looper} synchronization barriers.
 synchronization barriers是什么 直译过来是 “同步障碍/栅栏”
 即如果是异步的消息，这个消息是有  “栅栏” 的
-      
+//Asynchronous messages are exempt from synchronization barriers
+//翻译：异步消息不受同步障碍的影响    
 // The synchronization barrier ensures that the invalidation
 // request is completely handled before resuming
 保证绘制请求在resume之前被完全处理
 
-//Asynchronous messages are exempt from synchronization barriers
-//翻译：异步消息不受同步障碍的影响
-      //？？
-      //那肯定是我们的同步消息受这个barriers影响
 
-
-//影响如何施加？ 1：装进messagequeue中时  2：从中取时
-enqueueMessage（）没发现
-loop-messagequeue-next()方法，也没发现
-
-百度发现，同步屏障可以通过MessageQueue.postSyncBarrier函数来设置,类似enqueuemessage插入一个msg，只是这个msg不需要target(handler)
-
-messagequeue 的next方法，对msg.taget == null 判断，通过搜索 target == null 发现
-      
-      Message next() {
-      ...
-       if (msg != null && msg.target == null) {//判断有SyncBarrier ,同步屏障
-         //非异步的就继续next,意思是不要同步消息，取不到我们的消息...取不到。。。不到
-                do {
-                    prevMsg = msg;
-                    msg = msg.next;
-                } while (msg != null && !msg.isAsynchronous());
-			
-            }
-      ...
-
-		没有屏障时的正常排序，即根据when排序
-
-		return message;	
-    }
-      
-
-深究这个屏障何时加入：目前知道scheduleTraversals（）方法会执行mHandler.getLooper().getQueue().postSyncBarrier();
-
-总结：如果系统绘制任务来，你的同步消息全部让路。
-直到系统mHandler.getLooper().getQueue().removeSyncBarrier();
-  
-本质是控制message的优先级。
+scheduleTraversals（）方法会执行mHandler.getLooper().getQueue().postSyncBarrier()
+        
+本质是控制message的优先级
 ```
 
 1.在子线程更新UI

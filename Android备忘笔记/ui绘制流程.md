@@ -1,10 +1,16 @@
-[TOC]
-
 ## ui绘制流程
 
 #### ![view绘制](.\image\view绘制流程\view绘制.png)
 
-WindowManager负责维护一个与DecorView关联的ViewRoot对象
+->setContentView 
+
+->XML解析
+
+->ActivityThread resume
+
+->WindowManager添加
+
+->ViewRootImpl绘制
 
 
 
@@ -68,7 +74,7 @@ ViewGroup onLayout - layoutChild
 
 
 
-### 
+
 
 
 

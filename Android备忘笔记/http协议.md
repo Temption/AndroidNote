@@ -20,13 +20,35 @@ DNS负责域名解析，即提供 IP地址与域名之间的转换
 
 作用：应用层报文分割，打上标记序号与端口号转发给网络层
 
-tcp协议：三次握手保证可靠性 
+tcp协议：三次握手保证可靠性(发送与接受的可靠性) 
+
+```sequence
+title: 三次握手
+participant Client as C
+participant Server as S
+C-->S: SYC
+S-->C: SYC+ACK
+C-->S:ACK
+```
+
+
+```sequence
+title: 四次挥手
+participant Client as C
+participant Server as S
+C-->S: FIN(不发送，但是可接受)
+S-->C: ACK
+S-->C: FIN
+C-->S: ACK
+```
 
  握手标志：sync(synchronize)+ack(ackknolegement)
 
-1.c发sync 2.s返回sync+ack 3.发送ack数据包
+seq序号：占32位，用来标识从TCP源端向目的端发送的字节流，ack=seq+1
 
-tcp协议会将Http请求报文分割成报文段，加上序号，传给对方，接收方进行重组。//不懂，不是流吗？
+为什么TCP连接的时候是3次，关闭的时候却是4次？
+
+因为只有在客户端和服务端都没有数据要发送的时候才能断开TCP。而客户端发出FIN报文时只能保证客户端没有数据发了，服务端还有没有数据发客户端是不知道的。而服务端收到客户端的FIN报文后只能先回复客户端一个确认报文来告诉客户端我服务端已经收到你的FIN报文了，但我服务端还有一些数据没发完，等这些数据发完了服务端才能给客户端发FIN报文(所以不能一次性将确认报文和FIN报文发给客户端，就是这里多出来了一次)。
 
 ### 网络层：IP
 
@@ -186,6 +208,3 @@ Spdy:Google提出的基于传输控制协议(TCP)的应用层协议，压缩、�
 - 服务器提示
 
 websocket:http建立连接后，进行切换协议的握手，切换完成后就可以相互发送数据
-
-
-

@@ -4,17 +4,35 @@
 
 
 
-#### 1.var (variable)可以被重新赋值，val(value) 不可以
+#### 1.属性初始化
 
 ```kotlin
-//value 不可修改，但可以自定义getter
+//val 只有get,var 既有setter又有getter
 val size: Int
     get() { // 👈 每次获取 size 值时都会执行 items.size
         return items.size
     }
+// lambda 表达式中的最后一个表达式是返回值
+  val str:String? = "Dsadsa"
+    val lenth = str?.length?:{
+        -1
+    }
+
 ```
 
+延迟初始化
 
+```kotlin
+//延迟初始化 var，使用时可 通过isInitialized判断是否已经初始化
+protected lateinit var size:Int
+
+//懒加载 val
+ val size by lazy {
+        println("Init lazy")
+        "Hello World"
+ }
+
+```
 
 #### 2.关于null
 
@@ -215,13 +233,31 @@ println(dirtyLevel)
 
 - [Last parameter call syntax](https://kotlinlang.org/docs/reference/lambdas.html#passing-a-lambda-to-the-last-parameter)
 
+### 10.lambda作为参数
+
+- lambda作为最后一个参数可以移出（），拖尾lambda
+
+- lambda作为唯一参数，可以直接省略（）
+
+- lambda表达式只有一个参数，可以直接用it
+
+- lambda表达式含有多个参数，不用的参数可以使用 _ 代替
+
+- 
+  ```kotlin
+  // lambda 表达式中的最后一个表达式是返回值
+    val str:String? = "Dsadsa"
+      val lenth = str?.length?:{
+          -1   }
+  ```
+
 #### 11.constructor and init 
 
 ```kotlin
 class Student(private var name: String, private var age: Int) {
 
     private var gender: Int? = null
-
+	//主构造参数可以在init中使用
     init {
         name = "$name inited"
     }
@@ -244,11 +280,15 @@ class Student(private var name: String, private var age: Int) {
 }
 ```
 
-#### 12.subclasses 
+#### 12.open
 
 ```kotlin
 //open 的类可以被继承
 //interface 与 abstract 的类 默认是open的
+
+//val 属性可以被复写 为var ，反之不行，
+val 只有get,var 既有setter又有getter
+
 ```
 
 #### 13.interface delegation
@@ -304,6 +344,11 @@ class R (b :IB = B):IA by A("str"), IB by b
 //The copy(), equals(), only reference properties defined in the primary constructor
 ```
 
+#### 15.data类
+
+- 自带 setter,gettter,equal/hashCode,toString
+- equal 只比较主构造中的属性
+
 #### 15.destructing
 
 ```kotlin
@@ -327,7 +372,8 @@ enum class Direction(val degrees: Int) {
 #### 17.sealed class
 
 ```kotlin
-//只能被同一个文件中的类使用
+//抽象的，它不能直接实例化
+//只能被同一个kt文件中的类使用
 sealed class Seal
 class SeaLion : Seal()
 class Walrus : Seal()
@@ -339,6 +385,16 @@ fun matchSeal(seal: Seal): String {
    }
 }
 ```
+
+#### 18.data
+
+```
+
+```
+
+
+
+
 
 #### 18.pair
 
@@ -511,5 +567,9 @@ EditText().addTextChangedListener(object : TextWatcher {
 //内联函数作为参数时：
 //noinline 是局部关掉这个优化，让内联函数里的函数类型的参数可以被当做对象使用,来摆脱 inline 带来的「不能把函数类型的参数当对象使用」的限制；
 //crossinline 是局部加强这个优化，让内联函数里的函数类型的参数可以被当做对象使用。
+```
+
+```
+
 ```
 

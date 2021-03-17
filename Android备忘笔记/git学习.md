@@ -27,7 +27,6 @@ git clone 地址
 
 git push -u origin master
 
-
 **Git支持多种协议，包括https，但通过ssh支持的原生git协议速度最快。**
 
 git branch dev创建分支
@@ -46,4 +45,4 @@ git stash 保存当前现场后切换其他分支做事情，切回来然后git 
 
 
 
-![git_learn](.\image\git_learn.png)
+![git_learn](img/git%E5%AD%A6%E4%B9%A0/git_learn.png)
