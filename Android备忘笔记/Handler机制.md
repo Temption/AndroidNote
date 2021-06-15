@@ -1,169 +1,257 @@
+
+
 ## Handler机制
 
-### Handle定义：  
+[TOC]
 
-andriod提供给我们更新UI 必须使用 的一套机制，我们可以发送与一个线程的MessageQueue相关联的
+### 基本理解
+
+Handler构造需要Looper（子线程创建Handler异常）
+Looper.prepare()将Looper绑定到当前线程（ThreadLocal）
+Looper持有MessageQueue,将消息不断的取出，发送到Message的target，多个Handler可以对应一个Looper
 
 ### 源码解析
 
 ```java
 
-public class ActivityThread{
-    public void main(String args[]){
-		//将Loopper绑定当前Thread
-        Looper.prepareMainLooper();
-        
-        ActivityThread thread = new ActivityThread();
-		//接受系统服务AMS发来的消息
-        thread.attach(false);
+   public class ActivityThread {
+        public void main(String args[]) {
+            //将Loopper绑定当前Thread
+            Looper.prepareMainLooper();
 
-        if (sMainThreadHandler == null) {
-            sMainThreadHandler = thread.getHandler();
+            ActivityThread thread = new ActivityThread();
+            //接受系统服务AMS发来的消息
+            thread.attach(false);
+
+            if (sMainThreadHandler == null) {
+                sMainThreadHandler = thread.getHandler();
+            }
+
+            if (false) {
+                Looper.myLooper().setMessageLogging(new
+                        LogPrinter(Log.DEBUG, "ActivityThread"));
+            }
+
+            // End of event ActivityThreadMain.
+            Trace.traceEnd(Trace.TRACE_TAG_ACTIVITY_MANAGER);
+            Looper.loop();
         }
 
-        if (false) {
-            Looper.myLooper().setMessageLogging(new
-                    LogPrinter(Log.DEBUG, "ActivityThread"));
-        }
+        final void handleResumeActivity(IBinder token,
+                                        boolean clearHide, boolean isForward, boolean reallyResume) {
+            //1、调用activity的onResume方法，会调用到Activity的onResume方法
+            ActivityClientRecord r = performResumeActivity(token, clearHide);
+            //......
+            if (r != null) {
+                final Activity a = r.activity;
+                final int forwardBit = isForward ?
+                        WindowManager.LayoutParams.SOFT_INPUT_IS_FORWARD_NAVIGATION : 0;
+                //.......................
+                if (r.window == null && !a.mFinished && willBeVisible) {
+                    r.window = r.activity.getWindow();
+                    View decor = r.window.getDecorView();
+                    //2、decorView先暂时隐藏
+                    decor.setVisibility(View.INVISIBLE);
+                    ViewManager wm = a.getWindowManager();
+                    WindowManager.LayoutParams l = r.window.getAttributes();
+                    a.mDecor = decor;
+                    l.type = WindowManager.LayoutParams.TYPE_BASE_APPLICATION;
+                    l.softInputMode |= forwardBit;
+                    if (a.mVisibleFromClient) {
+                        a.mWindowAdded = true;
+                        //3、关键函数 添加到window
+                        wm.addView(decor, l);
+                    }
+                    //..............
+                    r.activity.mVisibleFromServer = true;
+                    mNumVisibleActivities++;
+                    if (r.activity.mVisibleFromClient) {
+                        //添加decorView之后，设置可见，从而显示了activity的界面
+                        r.activity.makeVisible();
+                    }
+                }
+            }
 
-        // End of event ActivityThreadMain.
-        Trace.traceEnd(Trace.TRACE_TAG_ACTIVITY_MANAGER);
-        Looper.loop();
         }
-   
- } 		
+    }
 ```
 
-本质上我们UI的展示、更新，是通过 MainThreadHandler 来处理,因此不会卡死
-
-ThreadLocal ：存储variable for which each thread has its own value.
-
-
 ```java
-private static void prepare(boolean quitAllowed) {
-  if (sThreadLocal.get() != null) {
-    throw new RuntimeException("Only one Looper may be created per thread");
-  }
-	//线程
-  sThreadLocal.set(new Looper(quitAllowed));
-}
- public static @Nullable Looper myLooper() {
-        return sThreadLocal.get();
-    }
-//Looper关联一个队列 与 当前线程     
- private Looper(boolean quitAllowed) {
-        // 创建MessageQueue对象
-        mQueue = new MessageQueue(quitAllowed);
-        // 记录当前线程
-        mThread = Thread.currentThread();
-   }
- public static @Nullable Looper myLooper() {
-        return sThreadLocal.get();
-    }
-
-  public static void loop() {
-         // 获取TLS存储的Looper对象
+ public final class Looper {
         final Looper me = myLooper();
-    	MessageQueue queue = me.mQueue;
-		
-	 for (;;) {
-                //取出
-            Message msg = queue.next(); //might block
-                 msg.target.dispatchMessage(msg);//分发
-     }
-  }
-```
+        final MessageQueue queue = me.mQueue;
 
-### Handler
-
-```java
-//Handler持有Looper，Looper持有MessageQueue与当前Thread
-public Handler(Callback callback, boolean async) {
-     	//如果是匿名类，warn开发者
-        //获取当前线程的Looper
-        mLooper = Looper.myLooper();
-        //当前线程没有Looper，抛异常
-        if (mLooper == null) {
-            throw new RuntimeException(
-					//子线程没有looper对象
-                "Can't create handler inside thread that has not called Looper.prepare()");
+        public static void loop() {
+            for (;;) {
+				// might block 重点
+                Message msg = queue.next(); 
+                //分发
+                try {
+                    msg.target.dispatchMessage(msg);
+                    dispatchEnd = needEndTime ? SystemClock.uptimeMillis() : 0;
+                } finally {
+                    if (traceTag != 0) {
+                        Trace.traceEnd(traceTag);
+                    }
+                }
+            }
         }
-
-        mQueue = mLooper.mQueue;
-       
-        mCallback = callback;
-    		
-        mAsynchronous = async;
     }
 
-
-//根据when将消息插入队列
-boolean enqueueMessage(Message msg, long when) {}
 ```
 
-
-
-### 同步屏障机制
-
 ```java
-// 从默认Handler的构造下手
-//默认的handler是同步消息 
-
-public Handler() {
+	//Handler.java
+	public Handler() {
         this(null, false);
     }
-
    /**
-     * @hide 
+     * @hide  该方法被hide了，
      */
     public Handler(Callback callback, boolean async) {
-            //...不让我们用async
          mAsynchronous = async;
     }
-    
-// 该方法被hide了，不让我们异步
-//我们构造的handler async = false
-//那这个异步到底谁在用？
- 
+    //我们只能发同步消息
     private boolean enqueueMessage(MessageQueue queue, Message msg, long uptimeMillis) {
         msg.target = this;
+		//异步消息在 Message 的 next过程中不受同步屏障影响
         if (mAsynchronous) {
-            //最终作用到message上
             msg.setAsynchronous(true);
         }
         return queue.enqueueMessage(msg, uptimeMillis);
     }
-
-	Message 的setAsynchronous注释：
-    // Sets whether the message is asynchronous, meaning that it is not
-    // subject to {@link Looper} synchronization barriers.
-synchronization barriers是什么 直译过来是 “同步障碍/栅栏”
-即如果是异步的消息，这个消息是有  “栅栏” 的
-//Asynchronous messages are exempt from synchronization barriers
-//翻译：异步消息不受同步障碍的影响    
-// The synchronization barrier ensures that the invalidation
-// request is completely handled before resuming
-保证绘制请求在resume之前被完全处理
-
-
-scheduleTraversals（）方法会执行mHandler.getLooper().getQueue().postSyncBarrier()
-        
-本质是控制message的优先级
+}
 ```
 
-1.在子线程更新UI
+### 同步屏障机制
 
-```kotlin
-//CalledFromWrongThreadException 只有创建view的线程可以操作view
-onResume时
-即ActivityThread.handleResumeActivity时
-创建ViewRootImp
-调用requestLayout时，checkThread()会抛出该错误
+- handleLaunchActivity 会调用onCreate方法将contentview 放到content中
+
+```java
+//ViewRootImpl.java  
+//将Window和DecorView关联
+setView()-->requestLayout()-->scheduleTraversals()
+
+void scheduleTraversals() {
+        if (!mTraversalScheduled) {
+            mTraversalScheduled = true;
+			//1.发送同步屏障  只要发的消息处于同步屏障之后，就能获取view绘制后的信息
+            mTraversalBarrier = mHandler.getLooper().getQueue().postSyncBarrier();
+            //2.将TraversalRunnable存放到Choreographer的“待执行队列中”
+			//Choreographer收到Vsync信号时将发送异步消息（绘制任务）到主线程执行
+            mChoreographer.postCallback(
+                    Choreographer.CALLBACK_TRAVERSAL, mTraversalRunnable, null);
+            if (!mUnbufferedInputDispatch) {
+                scheduleConsumeBatchedInput();
+            }
+            notifyRendererOfFramePending();
+            pokeDrawLockIfNeeded();
+        }
+    }
+	
+    final class TraversalRunnable implements Runnable {
+        @Override
+        public void run() {
+            doTraversal();
+        }
+    }
+
+ void doTraversal() {
+        if (mTraversalScheduled) {
+            mTraversalScheduled = false;
+            //移除同步屏障并执行三大流程
+            mHandler.getLooper().getQueue().removeSyncBarrier(mTraversalBarrier);
+            performTraversals();
+        }
+  }
+
+ private void performTraversals() {
+        //1. View树的测量-可以不测量直接走布局和绘制
+        if (mFirst || windowShouldResize || insetsChanged || viewVisibilityChanged || ...) {
+            performMeasure(childWidthMeasureSpec, childHeightMeasureSpec);
+            layoutRequested = true;  //需要进行布局
+        }
+        //2. View树的布局-可以不布局直接走绘制
+        final boolean didLayout = layoutRequested && (!mStopped || mReportNextDraw);
+        if (didLayout) {
+            performLayout(lp, mWidth, mHeight);
+        }
+        //3. View树的绘制-可以不进行绘制
+        boolean cancelDraw = mAttachInfo.mTreeObserver.dispatchOnPreDraw() || !isViewVisible;
+        if (!cancelDraw && !newSurface) {
+            performDraw();
+        }
+}
 ```
 
-Handler构造需要Looper（子线程创建Handler异常）
-Looper.prepare()将Looper绑定到当前线程（ThreadLocal）
-Looper持有MessageQueue,将消息不断的取出，发送到Message的target
+```java
+public final class MessageQueue {
+        private int postSyncBarrier(long when) {
+            // Enqueue a new sync barrier token.
+            // We don't need to wake the queue because the purpose of a barrier is to stall it.
+            synchronized (this) {
+                final int token = mNextBarrierToken++;
+                final Message msg = Message.obtain();
+                msg.markInUse();
+                msg.when = when;
+                msg.arg1 = token;
+                //...插入消息
+                return token;
+            }
+        }
+		//这里保证了异步消息的优先级最大
+        Message next() {
+            //如果有同步屏障，只能返回异步消息
+        }
+    }
+```
+
+
+
+### IdleHandler-LeakCanary
+
+```java
+public final class MessageQueue{
+     final class GcIdler implements MessageQueue.IdleHandler {
+     //当messageQueue 用完所有的消息（不包括延迟消息）
+        @Override
+        public final boolean queueIdle() {
+            doGcIfNeeded();
+			//调用后是否自动移除 
+            return false;	
+        }
+    }
+        //手动移除
+        public void removeIdleHandler(@NonNull IdleHandler handler) {
+                synchronized (this) {
+                    mIdleHandlers.remove(handler);
+                }
+        }
+        //手动移除
+        public void removeIdleHandler(@NonNull IdleHandler handler) {
+                synchronized (this) {
+                    mIdleHandlers.remove(handler);
+                }
+        }
+}
+```
+
+
+
+```java
+//ActivityThread 使用该IdleHandler完成Gc
+final class GcIdler implements MessageQueue.IdleHandler {
+     //当messageQueue 用完所有的消息（不包括延迟消息）
+        @Override
+        public final boolean queueIdle() {
+            doGcIfNeeded();
+			//调用后是否自动移除 
+            return false;
+        }
+}
+```
+
+
 
 
 

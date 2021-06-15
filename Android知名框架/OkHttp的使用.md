@@ -38,7 +38,6 @@ final class RealCall implements Call {
             responseCallback.onResponse(RealCall.this, response);
         }
     }
-	//责任链模式
 	Response getResponseWithInterceptorChain() throws IOException {
 		//构造拦截器
         List<Interceptor> interceptors = new ArrayList<>();
@@ -48,10 +47,25 @@ final class RealCall implements Call {
         interceptors.add(new CallServerInterceptor(forWebSocket));
 		//构造责任链
      	Interceptor.Chain chain =  new RealInterceptorChain(interceptors);
-		//责任链依次处理request后传递交给下个拦截器，最后CallServerInterceptor依次返回response到上一个拦截器
+		//从初始位置逐个取出拦截器进行拦截，拦截器拦截过程中可以终止
 		chain.proceed()
 	}
 }	
+
+public final class RealInterceptorChain implements Interceptor.Chain {
+  public Response proceed(Request request, Transmitter transmitter, @Nullable Exchange exchange){
+       // Call the next interceptor in the chain.
+    RealInterceptorChain next = new RealInterceptorChain(interceptors, transmitter, exchange,
+        index + 1, request, call, connectTimeout, readTimeout, writeTimeout);
+    Interceptor interceptor = interceptors.get(index);
+	//怼事件进行消费，将拦截链交给下一个拦截器
+    Response response = interceptor.intercept(next);
+	return response;
+  }
+}
+
+
+
 ```
 
 #### 2.2Dispatcher控制call执行分发
@@ -110,10 +124,41 @@ public final class Dispatcher {
 4.连接池
 
 
+____
+
+### OkHttp缓存策略
+
+> 服务器支持缓存，即响应的字段中包含Header:Cache-Control, max-age=xxx,(本地存储时间)
+
+```java
+OkHttpClient okHttpClient = new OkHttpClient();
+OkHttpClient newClient = okHttpClient.newBuilder()
+               .cache(new Cache(mContext.getCacheDir(), 10240*1024))
+               .connectTimeout(20, TimeUnit.SECONDS)
+               .readTimeout(20, TimeUnit.SECONDS)
+               .build();
+```
 
 
 
+> 服务器不支持缓
 
+```java
+//需要使用Interceptor来重写Respose的头部信息，从而让okhttp支持缓存。
+public class CacheInterceptor implements Interceptor {
+    @Override
+    public Response intercept(Chain chain) throws IOException {
+        Request request = chain.request();
+        Response response = chain.proceed(request);
+        Response response1 = response.newBuilder()
+                .removeHeader("Pragma")
+                .removeHeader("Cache-Control")
+                //cache for 30 days
+                .header("Cache-Control", "max-age=" + 3600 * 24 * 30)
+                .build();
+        return response1;
+    }
+```
 
 
 
